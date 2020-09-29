@@ -50,7 +50,7 @@ big5 = pd.read_csv(
 
 df = pd.concat([text, big5], axis=1, sort=False)
 print(df.sample(5))
-df = df.iloc[0:4]
+# df = df.iloc[0:4]
 max_len = 0
 for i in df['sentence']:
     # print(len(str(i)))
