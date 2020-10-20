@@ -131,3 +131,7 @@ dmypy.json
 # Model and tokenizer
 model/
 tokenizer/ 
+
+# Twitter API keys
+twitterAccess.txt
+comsumer_api_keys.txt
