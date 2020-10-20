@@ -1,18 +1,16 @@
 import tweepy
 import os
 import time
-import sys
 from pathlib import Path
-from datetime import datetime
-import json
-import re
-#------------------------------------------------------#
-#-------------authentication phase started-------------#
-#------------------------------------------------------#
+# ------------------------------------------------------#
+# -------------authentication phase started-------------#
+# ------------------------------------------------------#
+
+
 def authentication(pathToDevKeyAndSecret, pathToTwitterAuthData):
 	try:
-		f = open(pathToDevKeyAndSecret, "r")  #retrieving key and secret in a local file, not available on github
-											  #ask this info to the developer of the app
+		f = open(pathToDevKeyAndSecret, "r")  # retrieving key and secret in a local file, not available on github
+											  # ask this info to the developer of the app
 	except IOError:
 		print ("file with key and secret of Twitter app not found, ask to the developer\n")
 		exit()
