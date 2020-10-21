@@ -125,9 +125,11 @@ def retrieve_user_list(pathToUserList):
 def limit_handled(cursor):
 	while True:
 		try:
-			yield cursor.next()
+			yield next(cursor)
 		except tweepy.RateLimitError:
 			time.sleep(15*60) 
+		except StopIteration:
+			return
 def retrieve_and_store_followers_csv(pathToFollowerList, unique_users_returned, api):
 	user_progress = 0
 	for i in unique_users_returned:
@@ -158,11 +160,11 @@ def retrieve_and_store_tweet_tab_back(pathToUserTweets, unique_users_returned, a
 		while True:
 			try:
 				#get tweets
-				print ("Searching tweets of " + username)
+				print ("Searching tweets of " + str(username))
 				print("progress: " + str(user_progress) + "/" + str(len(unique_users_returned)))
 				#fp3 = open(pathToDataFolder+"/02_users_tweets"+"/"+username, "w")
-				fp3 = open(pathToUserTweets+username, "w")
-				for page in limit_handled(tweepy.Cursor(api.user_timeline, username, count=100, lang = "en").pages()):  #all tweets
+				fp3 = open(pathToUserTweets+str(username), "w")
+				for page in limit_handled(tweepy.Cursor(api.user_timeline, username).pages()):  #all tweets
 					for tweet in page:
 						fp3.write(str(tweet.id)+"\t")
 						new_tweet = ""

@@ -12,9 +12,11 @@ fn = "NewsFakeCOVID-19_tweets.csv"
 fake_news = pd.read_csv(pathToData+fn)
 print(fake_news.shape)
 ids = fake_news[['tweet_id']]
-# ids = ids[:1000]
+ids = ids[500:1000]
 print(ids)
 api = miu.authentication(pathToDevKeyAndSecret, pathToTwitterAuthData)
+
+''' retrieving retweetwers from fake news covid tweets
 counter = 0
 total_retweeters = []
 for tweetid in ids['tweet_id']:
@@ -32,7 +34,24 @@ for tweetid in ids['tweet_id']:
     except tweepy.TweepError as e:
         print(e)
 print(str(counter))
-fout = open("retweeters.txt", "w")
+fout = open("retweeters.txt", "a")
 # fout = open("claim_retweeters.txt", "w")
 for user in total_retweeters:
     fout.write(str(user)+"\n")
+'''
+
+retweeters_df = pd.read_csv("retweeters.txt", header=None)
+print(retweeters_df)
+retweeters_df.columns = ['user_id']
+print(retweeters_df, retweeters_df.shape)
+retweeters = retweeters_df['user_id'] 
+duplicated = retweeters_df[retweeters_df.duplicated(['user_id'])]
+duplicated = pd.unique(duplicated['user_id'])
+print("duplicated", duplicated)
+retweeters = pd.unique(retweeters)
+print("len retweeters", len(retweeters))
+retweeters = retweeters[:10]
+print("retweeters", retweeters)
+print(len(duplicated))
+duplicated = duplicated[2:]
+miu.retrieve_and_store_tweet_tab_back("./retweeters_timeline/", duplicated, api)
