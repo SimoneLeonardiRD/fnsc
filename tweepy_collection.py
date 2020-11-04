@@ -55,3 +55,4 @@ print("retweeters", retweeters)
 print(len(duplicated))
 duplicated = duplicated[2:]
 miu.retrieve_and_store_tweet_tab_back("./retweeters_timeline/", duplicated, api)
+# moved to hpc
