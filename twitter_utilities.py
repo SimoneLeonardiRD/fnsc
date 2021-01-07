@@ -2,9 +2,6 @@ import tweepy
 import os
 import time
 from pathlib import Path
-# ------------------------------------------------------#
-# -------------authentication phase started-------------#
-# ------------------------------------------------------#
 
 
 def authentication(pathToDevKeyAndSecret, pathToTwitterAuthData):
@@ -275,7 +272,6 @@ def compute_and_store_recall(topic_selected, pathToFollowerList, pathToUserTweet
 		fp4.write(str(recallScore))
 		fp4.close()
 	print ("[7] filtered by topic tweets printed and recall score calculated")   
-
 def compute_and_store_engagement(topic_selected, pathToUserTweets, pathToUserParameters, unique_users_returned, api):
 	user_progress = 0
 	for user in unique_users_returned:
@@ -310,6 +306,30 @@ def compute_and_store_engagement(topic_selected, pathToUserTweets, pathToUserPar
 		fout = open(pathToUserParameters+"/engagement/"+user,"w")
 		fout.write(str(Score_engagement))
 		fout.close()
+def store_users(api, ids):
+    users_from_tweetids = []
+    for tweetid in ids['tweet_id']:
+        try:
+            status = api.get_status(int(tweetid), trim_user=True)
+            users_from_tweetids.append(status.user.id)
+        except tweepy.RateLimitError:
+            print("sleeping")
+            time.sleep(15*60)
+        except tweepy.TweepError as e:
+            print(e)
+            continue
 
-		
+    users_from_tweetids = set(users_from_tweetids)
+    users_from_tweetids = list(users_from_tweetids)
+    fout = open("users_fake_news.txt", "a")
+    for user in users_from_tweetids:
+        fout.write(str(user)+"\n")
+def store_timelines(api, users_id, fout_path):
+    for user in users_id[:3]:
+        fout = open(fout_path+str(user),"w")
+        for status in tweepy.Cursor(api.user_timeline, user_id=user).items():
+            text = status.text
+            text = text.strip("\n\t")
+            fout.write(str(status.id)+"\t"+text+"\n")
+        fout.close() 		
 

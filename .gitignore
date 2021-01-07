@@ -137,3 +137,9 @@ twitterAccess.txt
 comsumer_api_keys.txt
 retweeters.txt
 retweeters_timeline/
+
+# other folders
+architecture_im/
+
+# other files
+users_fake_claim.txt
