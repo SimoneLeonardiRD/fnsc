@@ -140,6 +140,8 @@ retweeters_timeline/
 
 # other folders
 architecture_im/
+data/
 
 # other files
 users_fake_claim.txt
+users_fake_news.txt

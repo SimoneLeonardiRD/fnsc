@@ -13,15 +13,15 @@ ids = fake_news[['tweet_id']]
 # ids = ids[:10]
 print(ids, ids.shape)
 api = tu.authentication(pathToDevKeyAndSecret, pathToTwitterAuthData)
-# users collection done
 
 users_id = []
-fin = open("users_fake_claim.txt", "r")
+fin = open("users_fake_news.txt", "r")
 for line in fin.readlines():
-    print(line)
+    # print(line)
     users_id.append(line.rstrip("\n"))
 fout_path = "data/tweet/"
 
+tu.store_timelines(api, users_id, fout_path)
 ''' retrieving retweetwers from fake news covid tweets
 counter = 0
 total_retweeters = []

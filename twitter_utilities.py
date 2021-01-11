@@ -38,8 +38,8 @@ def authentication(pathToDevKeyAndSecret, pathToTwitterAuthData):
 		access_token = auth.access_token
 		access_token_secret = auth.access_token_secret
 		twitterAuthData = open(pathToTwitterAuthData, "w") 
-		twitterAuthData.write(auth.access_token+"\n"+auth.access_token_secret+"\n");
-		twitterAuthData.close();
+		twitterAuthData.write(auth.access_token+"\n"+auth.access_token_secret+"\n")
+		twitterAuthData.close()
 
 	else:
 		#already got auth data, read it from file
@@ -124,7 +124,17 @@ def limit_handled(cursor):
 		try:
 			yield next(cursor)
 		except tweepy.RateLimitError:
+			print(sleeping)
 			time.sleep(15*60) 
+		except tweepy.TweepError as e:
+			print(e)
+			code_elem = str(e).split(" ")
+			code_err = code_elem[-1]
+			# print(code_err)
+			if int(code_err) == 401:
+				return
+			else:
+				continue	
 		except StopIteration:
 			return
 def retrieve_and_store_followers_csv(pathToFollowerList, unique_users_returned, api):
@@ -324,12 +334,21 @@ def store_users(api, ids):
     fout = open("users_fake_news.txt", "a")
     for user in users_from_tweetids:
         fout.write(str(user)+"\n")
+
+
 def store_timelines(api, users_id, fout_path):
-    for user in users_id[:3]:
+    for user in users_id[:1]:
         fout = open(fout_path+str(user),"w")
-        for status in tweepy.Cursor(api.user_timeline, user_id=user).items():
-            text = status.text
-            text = text.strip("\n\t")
-            fout.write(str(status.id)+"\t"+text+"\n")
-        fout.close() 		
+        for status in limit_handled(tweepy.Cursor(api.user_timeline, user_id=user).items()):
+            fout.write(str(status.id)+"\t")
+            new_tweet = ""
+            tweet_cleaned = status.text.split("\n")
+            for sintagma in tweet_cleaned:
+                new_tweet = new_tweet + " " + sintagma
+            new_tweet2 = ""
+            tweet_cleaned2 = new_tweet.split("\t")
+            for sintagma2 in tweet_cleaned2:
+                new_tweet2 = new_tweet2 + " " + sintagma2
+            fout.write(new_tweet2 + "\n")
+        fout.close()
 
