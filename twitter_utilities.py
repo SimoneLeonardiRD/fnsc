@@ -5,317 +5,88 @@ from pathlib import Path
 
 
 def authentication(pathToDevKeyAndSecret, pathToTwitterAuthData):
-	try:
-		f = open(pathToDevKeyAndSecret, "r")  # retrieving key and secret in a local file, not available on github
-											  # ask this info to the developer of the app
-	except IOError:
-		print ("file with key and secret of Twitter app not found, ask to the developer\n")
-		exit()
-	else:
-	    print ("file opening and information retrieving")
+    try:
+        f = open(pathToDevKeyAndSecret, "r")
+        # retrieving key and secret in a local file, not available on github
+        # ask this info to the developer of the app
+    except IOError:
+        print("file with key and secret of Twitter app not found")
+        print("ask to the developer\n")
+        exit()
+    else:
+        print("file opening and information retrieving")
 
-	#read my developer app key and secret from local file .gitignore
-	consumer_key = f.readline().rstrip('\n') 
-	consumer_secret = f.readline().rstrip('\n') 
-	f.close()
-	auth = tweepy.OAuthHandler(consumer_key, consumer_secret)	
+    # read my developer app key and secret from local file .gitignore
+    consumer_key = f.readline().rstrip('\n')
+    consumer_secret = f.readline().rstrip('\n')
+    f.close()
+    auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
 
-	twitterAuthData = Path(pathToTwitterAuthData) #here we find key and secret of the user using the app on Twitter
-	if not twitterAuthData.is_file() or os.stat(pathToTwitterAuthData).st_size == 0:  
-		#no previous authentication data, need to autenthicate via browser
-		try:
-		    redirect_url = auth.get_authorization_url()
-		    print("Redirect url:", redirect_url)
-		except tweepy.TweepError:
-		    print ('Error! Failed to get request token.')
+    twitterAuthData = Path(pathToTwitterAuthData)  # here we find key and
+    # secret of the user using the app on Twitter
+    if(not twitterAuthData.is_file() or
+       os.stat(pathToTwitterAuthData).st_size == 0):
+        # no previous authentication data, need to autenthicate via browser
+        try:
+            redirect_url = auth.get_authorization_url()
+            print("Redirect url:", redirect_url)
+        except tweepy.TweepError:
+            print('Error! Failed to get request token.')
 
-		verifier = raw_input('Verifier:')
-		try:
-		    auth.get_access_token(verifier)
-		except tweepy.TweepError:
-		    print ('Error! Failed to get access token.')
+        verifier = input('Verifier:')
+        try:
+            auth.get_access_token(verifier)
+        except tweepy.TweepError:
+            print('Error! Failed to get access token.')
 
-		access_token = auth.access_token
-		access_token_secret = auth.access_token_secret
-		twitterAuthData = open(pathToTwitterAuthData, "w") 
-		twitterAuthData.write(auth.access_token+"\n"+auth.access_token_secret+"\n")
-		twitterAuthData.close()
+        access_token = auth.access_token
+        access_token_secret = auth.access_token_secret
+        twitterAuthData = open(pathToTwitterAuthData, "w")
+        twitterAuthData.write(auth.access_token+"\n" +
+                              auth.access_token_secret+"\n")
+        twitterAuthData.close()
 
-	else:
-		#already got auth data, read it from file
-		twitterAuthData = open(pathToTwitterAuthData, "r") 
-		access_token = twitterAuthData.readline().rstrip('\n')
-		access_token_secret = twitterAuthData.readline().rstrip('\n')
-		twitterAuthData.close()
+    else:
+        # already got auth data, read it from file
+        twitterAuthData = open(pathToTwitterAuthData, "r")
+        access_token = twitterAuthData.readline().rstrip('\n')
+        access_token_secret = twitterAuthData.readline().rstrip('\n')
+        twitterAuthData.close()
 
-	auth.set_access_token(access_token, access_token_secret)
-	api = tweepy.API(auth)#, wait_on_rate_limit=True, wait_on_rate_limit_notify=True)
-	print('[0] authentication completed with success')
-	return api
+    auth.set_access_token(access_token, access_token_secret)
+    api = tweepy.API(auth, wait_on_rate_limit=True)
+    # wait_on_rate_limit=True, wait_on_rate_limit_notify=True)
+    print('Authentication completed with success')
+    return api
+
+
 def create_all_necessary_folders(pathToDataFolder, topic_selected):
-	#--Create the Data collection folder if not exists--#
-	if not os.path.exists(pathToDataFolder):  #here we will store data collection after tweets retrieval
-	   os.makedirs(pathToDataFolder)
-	#--One folder per topic, in order to do not overwrite folders--#
-	pathToDataFolder = pathToDataFolder+"/"+topic_selected
-	#--Create the potential micro influencer list folder if not exists--#
-	if not os.path.exists(pathToDataFolder+"/00_potential_micro_influencers_users"):  
-	   os.makedirs(pathToDataFolder+"/00_potential_micro_influencers_users")
-	#--Create the follower list folder for all potential micro influencers if not exists--#
-	if not os.path.exists(pathToDataFolder+"/01_followers_list"):  
-		   os.makedirs(pathToDataFolder+"/01_followers_list")
-	#--Create the selected and filtered tweets folder for all potential micro influencers if not exists--#
-	if not os.path.exists(pathToDataFolder+"/02_users_tweets"):  
-		   os.makedirs(pathToDataFolder+"/02_users_tweets")
-	#--Create users_parameters folder of potential micr0 infuencer if not exists--#
-	if not os.path.exists(pathToDataFolder+"/03_users_parameters/recall"):  
-		   os.makedirs(pathToDataFolder+"/03_users_parameters/recall")
-	if not os.path.exists(pathToDataFolder+"/03_users_parameters/embeddness"):  
-		   os.makedirs(pathToDataFolder+"/03_users_parameters/embeddness")
-	if not os.path.exists(pathToDataFolder+"/03_users_parameters/interest"):  
-		   os.makedirs(pathToDataFolder+"/03_users_parameters/interest")
-	if not os.path.exists(pathToDataFolder+"/03_users_parameters/big5"):  
-		   os.makedirs(pathToDataFolder+"/03_users_parameters/big5")
-	if not os.path.exists(pathToDataFolder+"/03_users_parameters/y"):  
-		   os.makedirs(pathToDataFolder+"/03_users_parameters/y")
-	if not os.path.exists(pathToDataFolder+"/03_users_parameters/table"):  
-		   os.makedirs(pathToDataFolder+"/03_users_parameters/table")
-	if not os.path.exists("dataset"):  
-		   os.makedirs("dataset")
-	if not os.path.exists("GloVe"):  
-		   os.makedirs("GloVe")
-	print ("[1] all folders created or checked") 
-	return pathToDataFolder 
-def topic_selection():
-	topic_selected = input('What topic are you looking micro-influencers for?\n')
-	if not topic_selected.startswith('#'):
-		topic_selected = "#"+topic_selected
-		#print topic_selected 
-	return topic_selected         
-def user_list_from_topic_selected(topic_selected, api):
-	users_returned = []
-	print("Looking for users with at least 1k and at most 20k followers,")
-	print("having recently spoke about topic selected", topic_selected)
-	for tweet in limit_handled(tweepy.Cursor(api.search,q=topic_selected, count = 100, lang = "en").items(1000)): #now 1000, we'll exec on more topics			
-		if (tweet.user.followers_count>1000 and tweet.user.followers_count<20000):
-			#print (tweet.user.screen_name)
-			if tweet.user.friends_count < tweet.user.followers_count:
-				users_returned.append(tweet.user.screen_name)
-	unique_users_returned = set(users_returned)
-	unique_users_returned = list(unique_users_returned)
-	return unique_users_returned
-def store_user_list_csv(pathToStore, unique_users_returned):
-	fp1 = open(pathToStore, "w")
-	for mi_username in unique_users_returned:
-		if mi_username == unique_users_returned[-1]:
-			fp1.write(str(mi_username))
-		else:
-			fp1.write(str(mi_username)+",")
-	fp1.close()
-	print ("[2] List of potential micro influencers stored.")
-def retrieve_user_list(pathToUserList):
-	unique_users_returned = []
-	f = open(pathToUserList, "r")
-	content = f.read()
-	unique_users_returned = content.split(",")
-	return unique_users_returned 
+    # --Create the Data collection folder if not exists--#
+    if not os.path.exists(pathToDataFolder):
+        os.makedirs(pathToDataFolder)
+
+
 def limit_handled(cursor):
-	while True:
-		try:
-			yield next(cursor)
-		except tweepy.RateLimitError:
-			print(sleeping)
-			time.sleep(15*60) 
-		except tweepy.TweepError as e:
-			print(e)
-			code_elem = str(e).split(" ")
-			code_err = code_elem[-1]
-			# print(code_err)
-			if int(code_err) == 401:
-				return
-			else:
-				continue	
-		except StopIteration:
-			return
-def retrieve_and_store_followers_csv(pathToFollowerList, unique_users_returned, api):
-	user_progress = 0
-	for i in unique_users_returned:
-		count = 0
-		user_progress +=1
-		while True:
-			try:
-				print ("retrieving followers of:  " + i) 				
-				print("progress: " + str(user_progress) + "/" + str(len(unique_users_returned)))
-				fp2 = open(pathToFollowerList + i +".csv", "w")
-				for follower_id in limit_handled(tweepy.Cursor(api.followers_ids, screen_name=i).items()):
-					if count == 0:
-						fp2.write(str(follower_id))
-						count +=1
-					else:
-						fp2.write(","+str(follower_id))
-						count +=1
-				fp2.close()
-				break #exiting infinite while loop
-			except tweepy.TweepError:
-				time.sleep(15)
-		print (i + "'s followers stored. They are " + str(count))
-	print ("[3] Storing users followers phase completed.") 
-def retrieve_and_store_tweet_tab_back(pathToUserTweets, unique_users_returned, api):
-	user_progress = 0
-	for username in unique_users_returned:
-		user_progress +=1
-		while True:
-			try:
-				#get tweets
-				print ("Searching tweets of " + str(username))
-				print("progress: " + str(user_progress) + "/" + str(len(unique_users_returned)))
-				#fp3 = open(pathToDataFolder+"/02_users_tweets"+"/"+username, "w")
-				fp3 = open(pathToUserTweets+str(username), "w")
-				for page in limit_handled(tweepy.Cursor(api.user_timeline, username).pages()):  #all tweets
-					for tweet in page:
-						fp3.write(str(tweet.id)+"\t")
-						new_tweet = ""
-						tweet_cleaned = tweet.text.split("\n")
-						for sintagma in tweet_cleaned:
-							new_tweet = new_tweet + " " + sintagma
-						new_tweet2 = ""
-						tweet_cleaned2 = new_tweet.split("\t")
-						for sintagma2 in tweet_cleaned2:
-							new_tweet2 = new_tweet2 + " " + sintagma2
-						fp3.write(new_tweet2 + "\n")
-						#at the end of the story we have  ---->  TweetId\tTweetText\n				
-				fp3.close()
-				break #exiting infinite while loop
-			except tweepy.TweepError as e:
-				print(e)
-	print ("[4]tweets retrieved and stored") 
-def compute_and_store_embeddeness(pathToFollowerList, pathToUserParameters, unique_users_returned):
-	compare_follows_dict = {}
-	for username in unique_users_returned:
-		username_followers_list = []
-		fp2 = open(pathToFollowerList+username+".csv", "r")
-		username_followers_list = fp2.read().split(",")
-		fp2.close()
-		compare_follows_dict[username] = username_followers_list
-	print ("[5] dictionary created")
+    while True:
+        try:
+            yield next(cursor)
+        except tweepy.RateLimitError:
+            print("Sleeping")
+            time.sleep(15*60)
+        except tweepy.TweepError as e:
+            print(e)
+            code_elem = str(e).split(" ")
+            code_err = code_elem[-1]
+            # print(code_err)
+            if int(code_err) == 401:
+                return
+            if int(code_err) == 429:
+                print("Sleeping")
+                time.sleep(15*60)
+        except StopIteration:
+            return
 
-	for user in compare_follows_dict:
-		embeddnessScore = 0.0
-		total_overlapping = 0.0  #sum up all followers of a mi when compare in other mi followers list
-		followers_count = len(compare_follows_dict[user])
-		for user2 in compare_follows_dict:
-			if user != user2 :
-				same_followers_list = set(compare_follows_dict[user]) & set(compare_follows_dict[user2])
-				total_overlapping += len(same_followers_list)
-		if followers_count > 0:
-			embeddnessScore = total_overlapping/followers_count
-		else:
-			embeddnessScore = 0.0
-		#fp4 = open(pathToDataFolder+"/03_users_parameters/embeddness"+"/"+user+"_embeddnessScore.txt", "w");
-		fp4 = open(pathToUserParameters+"embeddness/"+user, "w")
-		fp4.write(str(embeddnessScore))
-		fp4.close()
-	print ("[6] embeddness score computed and stored") 
-def compute_and_store_interest(topic_selected, pathToUserTweets, pathToUserParameters, unique_users_returned):
-	for user in unique_users_returned:
-		#print topic_selected
-		#print topic_selected[1:]
-		significative_tweets_counter = 0.0
-		total_tweets = 0.0 
-		f = open(pathToUserTweets+user, "r")
-		for line in f.readlines():
-			if topic_selected in line or topic_selected[1:] in line:
-				significative_tweets_counter +=1
-			total_tweets += 1
-		f.close()
-		if total_tweets > 0:
-			Sint = (significative_tweets_counter/total_tweets)
-		else:
-			Sint = 0.0
-		fout = open(pathToUserParameters+"interest/"+user, "w")
-		fout.write(str(Sint))
-		fout.close()
-def compute_and_store_recall(topic_selected, pathToFollowerList, pathToUserTweets, pathToUserParameters, unique_users_returned, api):
-	user_progress = 0
-	for username in unique_users_returned:
-		user_progress += 1
-		print (username)
-		print("progress: " + str(user_progress) + "/" + str(len(unique_users_returned)))
-		username_followers_list = []
-		fp2 = open(pathToFollowerList+username+".csv", "r")
-		username_followers_list = fp2.read().split(",")
-		fp2.close()
-		significative_tweets_counter = 0.0
-		total_retweets_performed_by_followers = 0.0
-		user_tweets_counter = 0.0
-		fp3 = open(pathToUserTweets+username, "r")
-		for line in fp3.readlines():
-			user_tweets_counter += 1 
-			if topic_selected in line: #or topic_selected[1:] in line:
-				significative_tweets_counter +=1
-				informations = []
-				informations = line.split("\t")
-				while True:
-					try:
-						if informations[0].isdigit():			
-							try:
-								statuses = api.retweets(informations[0])
-								for status in statuses:
-									#print "status user id :" + str(status.user.id)
-									if str(status.user.id).rstrip("\n") in username_followers_list:
-										total_retweets_performed_by_followers +=1
-							except tweepy.RateLimitError:
-								time.sleep(15*60)
-						break
-					except:
-						print("Some error occurred, I'm trying again")
-		fp3.close()
-		if significative_tweets_counter > 0:
-			recallScore = (total_retweets_performed_by_followers/significative_tweets_counter)#/len(username_followers_list) rimosso per la non pagination quindi 100 retweet per tutti
-		else:
-			recallScore = 0.0
-		if user_tweets_counter > 0:
-			interest_in_that_topic = significative_tweets_counter/user_tweets_counter
-		else:
-			interest_in_that_topic = 0.0
-		fp4 = open(pathToUserParameters+"recall/"+username, "w");
-		fp4.write(str(recallScore))
-		fp4.close()
-	print ("[7] filtered by topic tweets printed and recall score calculated")   
-def compute_and_store_engagement(topic_selected, pathToUserTweets, pathToUserParameters, unique_users_returned, api):
-	user_progress = 0
-	for user in unique_users_returned:
-		tweet_skipped = 0
-		user_progress += 1
-		print (user)
-		print("progress: " + str(user_progress) + "/" + str(len(unique_users_returned)))
-		fin = open(pathToUserTweets+user, "r")
-		total_sum = 0.0
-		total_tweets = 0.0
-		followers_count = api.get_user(user).followers_count
-		for line in fin.readlines():
-			elements = line.split("\t") #tweet_id \t tweet_text
-			try:
-				tweet = api.get_status(elements[0])
-				sum_retweet_like = tweet.retweet_count + tweet.favorite_count
-				total_sum += sum_retweet_like
-				total_tweets += 1
-			except tweepy.RateLimitError:
-				print("Rate limit, i'm sleeping")
-				time.sleep(15*60)
-			except:				
-				tweet_skipped +=1
-				print("Tweepy error, tweet skipped over " + str(total_tweets), tweet_skipped)
-				continue
-		Score_engagement = (total_sum/followers_count)/total_tweets
-		fin.close()
 
-		if not os.path.exists(pathToUserParameters+"/engagement/"):  
-		   os.makedirs(pathToUserParameters+"/engagement/")
-
-		fout = open(pathToUserParameters+"/engagement/"+user,"w")
-		fout.write(str(Score_engagement))
-		fout.close()
 def store_users(api, ids):
     users_from_tweetids = []
     for tweetid in ids['tweet_id']:
@@ -336,10 +107,15 @@ def store_users(api, ids):
         fout.write(str(user)+"\n")
 
 
-def store_timelines(api, users_id, fout_path):
-    for user in users_id[:1]:
-        fout = open(fout_path+str(user),"w")
-        for status in limit_handled(tweepy.Cursor(api.user_timeline, user_id=user).items()):
+def store_timelines(api, users_id, fout_path, since_id):  # , max_id):
+    counter = 0
+    for user in users_id[12:20]:
+        print(str(counter))
+        counter += 1
+        fout = open(fout_path+str(user), "w")
+        for status in limit_handled(tweepy.Cursor(api.user_timeline,
+                                    user_id=user, since_id=since_id).items()):
+            # max_id=max_id
             fout.write(str(status.id)+"\t")
             new_tweet = ""
             tweet_cleaned = status.text.split("\n")
@@ -352,3 +128,47 @@ def store_timelines(api, users_id, fout_path):
             fout.write(new_tweet2 + "\n")
         fout.close()
 
+
+''' retrieving retweetwers from fake news covid tweets
+counter = 0
+total_retweeters = []
+for tweetid in ids['tweet_id']:
+    try:
+        # for page in tu.limit_handled(tweepy.Cursor(
+        #                              api.retweeters, tweetid).pages()):
+        #    print(page)
+        retweeters_100 = api.retweeters(int(tweetid))
+        print(retweeters_100)
+        if len(retweeters_100) > 0:
+            counter = counter + 1
+            for user_id in retweeters_100:
+                total_retweeters.append(user_id)
+    except tweepy.RateLimitError:
+        time.sleep(15*60)
+    except tweepy.TweepError as e:
+        print(e)
+print(str(counter))
+fout = open("retweeters.txt", "a")
+# fout = open("claim_retweeters.txt", "w")
+for user in total_retweeters:
+    fout.write(str(user)+"\n")
+'''
+
+'''
+retweeters_df = pd.read_csv("retweeters.txt", header=None)
+print(retweeters_df)
+retweeters_df.columns = ['user_id']
+print(retweeters_df, retweeters_df.shape)
+retweeters = retweeters_df['user_id']
+duplicated = retweeters_df[retweeters_df.duplicated(['user_id'])]
+duplicated = pd.unique(duplicated['user_id'])
+print("duplicated", duplicated)
+retweeters = pd.unique(retweeters)
+print("len retweeters", len(retweeters))
+retweeters = retweeters[:10]
+print("retweeters", retweeters)
+print(len(duplicated))
+duplicated = duplicated[2:]
+tu.retrieve_and_store_tweet_tab_back("./retweeters_timeline/", duplicated, api)
+# moved to hpc
+'''

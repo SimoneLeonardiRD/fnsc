@@ -1,9 +1,12 @@
 import twitter_utilities as tu
 import pandas as pd
+import nlp_utilities as nu
 
 
 pathToTwitterAuthData = "twitterAccess.txt"
 pathToDevKeyAndSecret = "consumer_api_keys.txt"
+api = tu.authentication(pathToDevKeyAndSecret, pathToTwitterAuthData)
+
 pathToData = "~/Venv/Documents/dataset/CoAID/"
 fn = "NewsFakeCOVID-19_tweets.csv"
 # fn = "ClaimFakeCOVID-19_tweets.csv"
@@ -11,56 +14,31 @@ fake_news = pd.read_csv(pathToData+fn)
 print(fake_news.shape)
 ids = fake_news[['tweet_id']]
 # ids = ids[:10]
-print(ids, ids.shape)
-api = tu.authentication(pathToDevKeyAndSecret, pathToTwitterAuthData)
+# print(ids, ids.shape)
 
 users_id = []
 fin = open("users_fake_news.txt", "r")
 for line in fin.readlines():
-    # print(line)
     users_id.append(line.rstrip("\n"))
 fout_path = "data/tweet/"
 
-tu.store_timelines(api, users_id, fout_path)
-''' retrieving retweetwers from fake news covid tweets
-counter = 0
-total_retweeters = []
-for tweetid in ids['tweet_id']:
-    try:
-        # for page in tu.limit_handled(tweepy.Cursor(api.retweeters, tweetid).pages()):
-        #    print(page)
-        retweeters_100 = api.retweeters(int(tweetid))
-        print(retweeters_100)
-        if len(retweeters_100) > 0:
-            counter = counter + 1
-            for user_id in retweeters_100:
-                total_retweeters.append(user_id)
-    except tweepy.RateLimitError:
-        time.sleep(15*60)
-    except tweepy.TweepError as e:
-        print(e)
-print(str(counter))
-fout = open("retweeters.txt", "a")
-# fout = open("claim_retweeters.txt", "w")
-for user in total_retweeters:
-    fout.write(str(user)+"\n")
-'''
+since_id = fake_news["tweet_id"].min()  # time span matching CoAid
+# max_id = fake_news["tweet_id"].max()
+print(since_id)  # , max_id)
+tu.store_timelines(api, users_id, fout_path, since_id)  # , max_id)
 
 '''
-retweeters_df = pd.read_csv("retweeters.txt", header=None)
-print(retweeters_df)
-retweeters_df.columns = ['user_id']
-print(retweeters_df, retweeters_df.shape)
-retweeters = retweeters_df['user_id']
-duplicated = retweeters_df[retweeters_df.duplicated(['user_id'])]
-duplicated = pd.unique(duplicated['user_id'])
-print("duplicated", duplicated)
-retweeters = pd.unique(retweeters)
-print("len retweeters", len(retweeters))
-retweeters = retweeters[:10]
-print("retweeters", retweeters)
-print(len(duplicated))
-duplicated = duplicated[2:]
-tu.retrieve_and_store_tweet_tab_back("./retweeters_timeline/", duplicated, api)
-# moved to hpc
+df = pd.read_csv(pathToData+"NewsFakeCOVID-19.csv")
+fake_news_list = [df["news_url"], df["news_url2"],
+                  df["news_url3"], df["news_url4"],
+                  df["news_url5"]]
+flat_list = []
+for sublist in fake_news_list:
+    for item in sublist:
+        if pd.isna(item) is False:
+            flat_list.append(item)
+print(len(flat_list))
+
+
+nu.parse_match_count(flat_list, users_id)
 '''
