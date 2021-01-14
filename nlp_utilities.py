@@ -1,5 +1,5 @@
 import requests
-import multiprocessing
+# import multiprocessing
 
 
 
@@ -31,10 +31,10 @@ def find_url(line):
 
 
 def parse_match_count(fake_news_list, users_id):
-    pool = multiprocessing.Pool(100)
+    # pool = multiprocessing.Pool(100)
     counter_users = 1
     total = len(users_id)
-    for user in users_id[5:20]:
+    for user in users_id[:2]:
         print("Progress: " + str(counter_users) + "/" + str(total))
         print(str(user))
         counter_fake_tweets = 0.0
@@ -42,12 +42,21 @@ def parse_match_count(fake_news_list, users_id):
         url_list = []
         fin = open("data/tweet/"+str(user), "r")
         for line in fin.readlines():
-            counter_lines_checked += 1
             url = find_url(line)
             url_list.append(url)
         resolved_urls = []
-        for shorturl, longurl in pool.map(resolve_url, url_list):
-            resolved_urls.append(longurl)
+        for i in url_list:
+            if i is not None:
+                counter_lines_checked += 1
+                #print(i)
+                try:
+                    elem = requests.head(i).headers['location']
+                    resolved_urls.append(elem)
+                except requests.exceptions.InvalidURL:
+                    print("bad request", i)
+                except KeyError as e:
+                    print(e)
+
         for url in resolved_urls:
             if url in fake_news_list:
                 print(user, "fake link found\n")

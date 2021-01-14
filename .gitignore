@@ -141,7 +141,9 @@ retweeters_timeline/
 # other folders
 architecture_im/
 data/
+.vscode/
 
 # other files
 users_fake_claim.txt
 users_fake_news.txt
+scratch_code.py

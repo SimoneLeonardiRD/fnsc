@@ -109,16 +109,18 @@ def store_users(api, ids):
 
 def store_timelines(api, users_id, fout_path, since_id):  # , max_id):
     counter = 0
-    for user in users_id[20:50]:
+    for user in users_id[:2]:
         print(str(counter))
         counter += 1
         fout = open(fout_path+str(user), "w")
         for status in limit_handled(tweepy.Cursor(api.user_timeline,
-                                    user_id=user, since_id=since_id).items()):
-            # max_id=max_id
+                                    user_id=user, since_id=since_id,
+                                    tweet_mode="extended").items()):
             fout.write(str(status.id)+"\t")
+            if status.full_text.startswith("RT @") is True:
+                status = status.retweeted_status
             new_tweet = ""
-            tweet_cleaned = status.text.split("\n")
+            tweet_cleaned = status.full_text.split("\n")
             for sintagma in tweet_cleaned:
                 new_tweet = new_tweet + " " + sintagma
             new_tweet2 = ""
@@ -127,48 +129,3 @@ def store_timelines(api, users_id, fout_path, since_id):  # , max_id):
                 new_tweet2 = new_tweet2 + " " + sintagma2
             fout.write(new_tweet2 + "\n")
         fout.close()
-
-
-''' retrieving retweetwers from fake news covid tweets
-counter = 0
-total_retweeters = []
-for tweetid in ids['tweet_id']:
-    try:
-        # for page in tu.limit_handled(tweepy.Cursor(
-        #                              api.retweeters, tweetid).pages()):
-        #    print(page)
-        retweeters_100 = api.retweeters(int(tweetid))
-        print(retweeters_100)
-        if len(retweeters_100) > 0:
-            counter = counter + 1
-            for user_id in retweeters_100:
-                total_retweeters.append(user_id)
-    except tweepy.RateLimitError:
-        time.sleep(15*60)
-    except tweepy.TweepError as e:
-        print(e)
-print(str(counter))
-fout = open("retweeters.txt", "a")
-# fout = open("claim_retweeters.txt", "w")
-for user in total_retweeters:
-    fout.write(str(user)+"\n")
-'''
-
-'''
-retweeters_df = pd.read_csv("retweeters.txt", header=None)
-print(retweeters_df)
-retweeters_df.columns = ['user_id']
-print(retweeters_df, retweeters_df.shape)
-retweeters = retweeters_df['user_id']
-duplicated = retweeters_df[retweeters_df.duplicated(['user_id'])]
-duplicated = pd.unique(duplicated['user_id'])
-print("duplicated", duplicated)
-retweeters = pd.unique(retweeters)
-print("len retweeters", len(retweeters))
-retweeters = retweeters[:10]
-print("retweeters", retweeters)
-print(len(duplicated))
-duplicated = duplicated[2:]
-tu.retrieve_and_store_tweet_tab_back("./retweeters_timeline/", duplicated, api)
-# moved to hpc
-'''
