@@ -109,7 +109,7 @@ def store_users(api, ids):
 
 def store_timelines(api, users_id, fout_path, since_id):  # , max_id):
     counter = 0
-    for user in users_id[:2]:
+    for user in users_id:
         print(str(counter))
         counter += 1
         fout = open(fout_path+str(user), "w")

@@ -25,7 +25,8 @@ fout_path = "data/tweet/"
 since_id = fake_news["tweet_id"].min()  # time span matching CoAid
 # max_id = fake_news["tweet_id"].max()
 print(since_id)  # , max_id)
-# tu.store_timelines(api, users_id, fout_path, since_id)  # , max_id)
+users_id = users_id[10:20]
+tu.store_timelines(api, users_id, fout_path, since_id)  # , max_id)
 
 
 df = pd.read_csv(pathToData+"CoAID/05-01-2020/NewsFakeCOVID-19.csv")
@@ -51,4 +52,17 @@ for sublist in fake_news_list:
             flat_list.append(item)
 print(len(flat_list))
 
-nu.parse_match_count(flat_list, users_id)
+dfr = pd.read_csv(pathToData+"CoAID/05-01-2020/NewsRealCOVID-19.csv")
+dfr2 = pd.read_csv(pathToData+"CoAID/07-01-2020/NewsRealCOVID-19.csv")
+dfr3 = pd.read_csv(pathToData+"CoAID/09-01-2020/NewsRealCOVID-19.csv")
+dfr4 = pd.read_csv(pathToData+"CoAID/11-01-2020/NewsRealCOVID-19.csv")
+real_news_list = [dfr["news_url"], dfr2["news_url"],
+                  dfr3["news_url"], dfr4["news_url"]]
+flat_real = []
+for sublist in real_news_list:
+    for item in sublist:
+        if pd.isna(item) is False:
+            flat_real.append(item)
+print(len(flat_real))
+
+nu.parse_match_count(flat_list, flat_real, users_id)

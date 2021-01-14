@@ -144,6 +144,6 @@ data/
 .vscode/
 
 # other files
-users_fake_claim.txt
-users_fake_news.txt
+*.txt
 scratch_code.py
+*.csv
