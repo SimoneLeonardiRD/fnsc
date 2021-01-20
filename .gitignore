@@ -134,7 +134,7 @@ tokenizer/
 
 # Twitter API keys
 twitterAccess.txt
-comsumer_api_keys.txt
+consumer_api_keys.txt
 retweeters.txt
 retweeters_timeline/
 

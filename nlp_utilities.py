@@ -27,11 +27,11 @@ def find_url(line):
             return word.rstrip("\n")
 
 
-def parse_match_count(fake_news_list, real_news_list, users_id):
+def parse_match_count(df_fake_news, df_real_news, users_id):
     pool = multiprocessing.Pool(100)
     counter_users = 1
     total = len(users_id)
-    dfcoll = pd.read_csv("fake_uit.csv") 
+    dfcoll = pd.read_csv("fake_uit.csv")
     dfcollr = pd.read_csv("real_uit.csv")
     dfstat = pd.read_csv("count_fake_real.csv")
     for user in users_id:
@@ -41,21 +41,26 @@ def parse_match_count(fake_news_list, real_news_list, users_id):
         counter_real_tweets = 0.0
         counter_lines_checked = 0.0
         url_list = []
-        fin = open("data/tweet/"+str(user), "r")
-        for line in fin.readlines():
-            counter_lines_checked += 1
-            columns = line.split("\t")  # tweet id and text
-            url = find_url(line)
-            url_list.append(url)
+        df = pd.read_csv("data/tweet/"+str(user)+".csv")
+        df_url = df[df.text.str.contains('http', case=False)]
+        url_list = []
+        for text in df_url.text:
+            url_list.append(find_url(text))
+        df_url['url'] = url_list
         resolved_urls = []
         for longurl in pool.map(resolve_url, url_list):
             resolved_urls.append(longurl)
+        df_url['extended_url'] = resolved_urls
+        # df[(df.Age.isin([30,25])) & (df.name.str.contains('Allan'))]
+        # check empty return result check none
+        exit()   
+        '''
 
         for url in resolved_urls:
             if url is None:
                 continue
             if url in fake_news_list:
-                print(user, "fake link found\n")
+                #print(user, "fake link found\n")
                 counter_fake_tweets += 1  # salvare per stance detection
                 dfcoll_row = {
                     'user_id': str(user),
@@ -65,7 +70,7 @@ def parse_match_count(fake_news_list, real_news_list, users_id):
                 }
                 dfcoll = dfcoll.append(dfcoll_row, ignore_index=True)
             if url in real_news_list:
-                print(user, "real link found\n")
+                #print(user, "real link found\n")
                 counter_real_tweets += 1  # salvare per stance detection
                 dfcollr_row = {
                     'user_id': str(user),
@@ -91,3 +96,48 @@ def parse_match_count(fake_news_list, real_news_list, users_id):
     dfcoll.to_csv("fake_uit.csv", index=False)
     dfcollr.to_csv("real_uit.csv", index=False)
     dfstat.to_csv("count_fake_real.csv", index=False)
+'''
+
+def stance_detection_create_file(df_news, df_detected, fake=True):
+    i = 1
+    iloc_count = 0
+    flag = 0
+    f = open("gate_cloud.txt", "w")
+    for url in df_detected["url"]:
+        flag, title = check_column("news_url", df_news, url)
+        if fake is True:
+            if flag == 0:
+                flag, title = check_column("news_url2", df_news, url)
+            if flag == 0:
+                flag, title = check_column("news_url3", df_news, url)
+            if flag == 0:
+                flag, title = check_column("news_url4", df_news, url)
+            if flag == 0:
+                flag, title = check_column("news_url5", df_news, url)
+        if flag == 1:
+            f.write("{\"text\":\""+str(df_detected.iloc[iloc_count]['tweet_text']) +
+                    "\",\"id_str\":\""+str(i)+"\"}\n\n")
+            f.write("{\"text\":\""+str(title)+"\",\"id_str\":\""+str(i+1) +
+                    "\", \"in_reply_to_status_id_str\":\""+str(i)+"\"}\n\n")
+        i = i + 2
+        iloc_count = iloc_count + 1
+    f.close()
+
+
+def check_column(column, df_news, url):
+    try:
+        result = df_news[df_news[column].str.match(str(url))]
+        # print(result["title"].values[0], url)
+        # exit()
+        if result.empty:
+            print("empty")
+            title = None
+            flag = 0
+        else:
+            title = result["title"].values[0]
+            flag = 1
+    except KeyError:
+        print("Key")
+        flag = 0
+        return flag, None
+    return flag, title

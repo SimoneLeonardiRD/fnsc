@@ -2,6 +2,7 @@ import tweepy
 import os
 import time
 from pathlib import Path
+import pandas as pd
 
 
 def authentication(pathToDevKeyAndSecret, pathToTwitterAuthData):
@@ -78,11 +79,13 @@ def limit_handled(cursor):
             code_elem = str(e).split(" ")
             code_err = code_elem[-1]
             # print(code_err)
-            if int(code_err) == 401:
+            if code_err == '401':
                 return
-            if int(code_err) == 429:
+            if code_err == '429':
                 print("Sleeping")
                 time.sleep(15*60)
+            else:
+                return
         except StopIteration:
             return
 
@@ -117,8 +120,11 @@ def store_timelines(api, users_id, fout_path, since_id):  # , max_id):
                                     user_id=user, since_id=since_id,
                                     tweet_mode="extended").items()):
             fout.write(str(status.id)+"\t")
-            if status.full_text.startswith("RT @") is True:
-                status = status.retweeted_status
+            if (status.full_text.startswith("RT @") is True):
+                try:
+                    status = status.retweeted_status
+                except:
+                    status = status
             new_tweet = ""
             tweet_cleaned = status.full_text.split("\n")
             for sintagma in tweet_cleaned:
@@ -129,3 +135,32 @@ def store_timelines(api, users_id, fout_path, since_id):  # , max_id):
                 new_tweet2 = new_tweet2 + " " + sintagma2
             fout.write(new_tweet2 + "\n")
         fout.close()
+
+
+def store_timelines2(api, users_id, fout_path, since_id):  # , max_id):
+    counter = 0
+    for user in users_id:
+        print(str(counter))
+        counter += 1
+        data = {'user_id': [],
+                'tweet_id': [],
+                'text': []
+                }
+        df = pd.DataFrame(data)
+        for status in limit_handled(tweepy.Cursor(api.user_timeline,
+                                    user_id=user, since_id=since_id,
+                                    tweet_mode="extended").items()):
+            if (status.full_text.startswith("RT @") is True):
+                try:
+                    status = status.retweeted_status
+                except:
+                    status = status
+            new_row = {
+                'user_id': str(user),
+                'tweet_id': str(status.id),
+                'text': status.full_text
+            }
+            #print(new_row)
+            df = df.append(new_row, ignore_index=True)
+            #print(df)
+        df.to_csv(fout_path+str(user)+".csv", index=False)
