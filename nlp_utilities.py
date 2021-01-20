@@ -6,15 +6,24 @@ import pandas as pd
 def resolve_url(url):
     if url is None:
         return None
-
+    url = url.rstrip(".")
     try:
         elem = requests.head(url).headers['location']
+        if(elem.startswith("https://bit.ly") or
+           elem.startswith("https://cutt.ly") or
+           elem.startswith("https://goo.gl") or
+           elem.startswith("https://rebrand.ly") or
+           elem.startswith("https://demo.polr.me") or
+           elem.startswith("https://tinyurl") or
+           elem.startswith("https://t2m") or
+           elem.startswith("https://yourls")):
+            elem = resolve_url(elem)
         return elem
     except requests.exceptions.InvalidURL:
         print("bad request", url)
         return None
     except KeyError as e:
-        print(e)
+        # print(e)
         return None
     except:
         print("generic error\n")
@@ -31,15 +40,28 @@ def parse_match_count(df_fake_news, df_real_news, users_id):
     pool = multiprocessing.Pool(100)
     counter_users = 1
     total = len(users_id)
-    dfcoll = pd.read_csv("fake_uit.csv")
-    dfcollr = pd.read_csv("real_uit.csv")
-    dfstat = pd.read_csv("count_fake_real.csv")
+    col = {
+        'user_id': [],
+        'tweet_id': [],
+        'text': [],
+        'url': [],
+        'extended_url': []
+    }
+    colstat = {
+        'user_id': [],
+        'fake_count': [],
+        'real_count': [],
+        'total_tweet': [],
+        'percentage_fake': [],
+        'percentage_real': []
+    }
+    dfcoll = pd.DataFrame(col).astype('object')
+    dfcollr = pd.DataFrame(col).astype('object')
+    dfstat = pd.DataFrame(colstat).astype('object')
     for user in users_id:
         print("Progress: " + str(counter_users) + "/" + str(total))
+        counter_users = counter_users + 1
         print(str(user))
-        counter_fake_tweets = 0.0
-        counter_real_tweets = 0.0
-        counter_lines_checked = 0.0
         url_list = []
         df = pd.read_csv("data/tweet/"+str(user)+".csv")
         df_url = df[df.text.str.contains('http', case=False)]
@@ -51,59 +73,43 @@ def parse_match_count(df_fake_news, df_real_news, users_id):
         for longurl in pool.map(resolve_url, url_list):
             resolved_urls.append(longurl)
         df_url['extended_url'] = resolved_urls
-        # df[(df.Age.isin([30,25])) & (df.name.str.contains('Allan'))]
-        # check empty return result check none
-        exit()   
-        '''
+        df_fake_found = df_url[
+            (df_url.extended_url.isin(df_fake_news["news_url"].values))
+            | (df_url.extended_url.isin(df_fake_news["news_url2"].values))
+            | (df_url.extended_url.isin(df_fake_news["news_url3"].values))
+            | (df_url.extended_url.isin(df_fake_news["news_url4"].values))
+            | (df_url.extended_url.isin(df_fake_news["news_url5"].values))
+        ]
+        dfcoll = dfcoll.append(df_fake_found)
+        df_real_found = df_url[
+            df_url.extended_url.isin(df_real_news["news_url"].values)]
+        dfcollr = dfcollr.append(df_real_found)
+        if df.shape[0] == 0:
+            den = 1
+        else:
+            den = df.shape[0]
 
-        for url in resolved_urls:
-            if url is None:
-                continue
-            if url in fake_news_list:
-                #print(user, "fake link found\n")
-                counter_fake_tweets += 1  # salvare per stance detection
-                dfcoll_row = {
-                    'user_id': str(user),
-                    'tweet_id': str(columns[0]),
-                    'tweet_text': line[(len(columns[0])+1):].rstrip("\n"),
-                    'url': str(url)
-                }
-                dfcoll = dfcoll.append(dfcoll_row, ignore_index=True)
-            if url in real_news_list:
-                #print(user, "real link found\n")
-                counter_real_tweets += 1  # salvare per stance detection
-                dfcollr_row = {
-                    'user_id': str(user),
-                    'tweet_id': str(columns[0]),
-                    'tweet_text': line[(len(columns[0])+1):].rstrip("\n"),
-                    'url': str(url)
-                }
-                dfcollr = dfcollr.append(dfcollr_row, ignore_index=True)
-        fin.close()
-        if counter_lines_checked == 0:
-            counter_lines_checked = 1
         dfstat_row = {
             'user_id': str(user),
-            'fake_count': str(counter_fake_tweets),
-            'real_count': str(counter_real_tweets),
-            'total_tweet': str(counter_lines_checked),
-            'percentage_fake': str((counter_fake_tweets/counter_lines_checked)*100),
-            'percentage_real': str((counter_real_tweets/counter_lines_checked)*100)
+            'fake_count': str(df_fake_found.shape[0]),
+            'real_count': str(df_real_found.shape[0]),
+            'total_tweet': str(df.shape[0]),
+            'percentage_fake': str((df_fake_found.shape[0]/den)*100),
+            'percentage_real': str((df_real_found.shape[0]/den)*100)
 
         }
         dfstat = dfstat.append(dfstat_row, ignore_index=True)
-        counter_users += 1
-    dfcoll.to_csv("fake_uit.csv", index=False)
-    dfcollr.to_csv("real_uit.csv", index=False)
-    dfstat.to_csv("count_fake_real.csv", index=False)
-'''
+    dfcoll.to_csv("data/df/fake_uit_0.csv", index=False)
+    dfcollr.to_csv("data/df/real_uit_0.csv", index=False)
+    dfstat.to_csv("data/df/count_0.csv", index=False)
+
 
 def stance_detection_create_file(df_news, df_detected, fake=True):
     i = 1
     iloc_count = 0
     flag = 0
     f = open("gate_cloud.txt", "w")
-    for url in df_detected["url"]:
+    for url in df_detected["extended_url"]:
         flag, title = check_column("news_url", df_news, url)
         if fake is True:
             if flag == 0:
@@ -115,7 +121,8 @@ def stance_detection_create_file(df_news, df_detected, fake=True):
             if flag == 0:
                 flag, title = check_column("news_url5", df_news, url)
         if flag == 1:
-            f.write("{\"text\":\""+str(df_detected.iloc[iloc_count]['tweet_text']) +
+            f.write("{\"text\":\""+str(
+                df_detected.iloc[iloc_count]['text']) +
                     "\",\"id_str\":\""+str(i)+"\"}\n\n")
             f.write("{\"text\":\""+str(title)+"\",\"id_str\":\""+str(i+1) +
                     "\", \"in_reply_to_status_id_str\":\""+str(i)+"\"}\n\n")
@@ -126,11 +133,8 @@ def stance_detection_create_file(df_news, df_detected, fake=True):
 
 def check_column(column, df_news, url):
     try:
-        result = df_news[df_news[column].str.match(str(url))]
-        # print(result["title"].values[0], url)
-        # exit()
+        result = df_news[df_news[column].str.contains(str(url))]
         if result.empty:
-            print("empty")
             title = None
             flag = 0
         else:
