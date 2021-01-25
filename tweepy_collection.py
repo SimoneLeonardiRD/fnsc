@@ -22,8 +22,9 @@ fout_path = "data/tweet/"
 since_id = fake_news["tweet_id"].min()  # time span matching CoAid
 # max_id = fake_news["tweet_id"].max()
 print(since_id)  # , max_id)
-users_id = users_id[:30]
+users_id = users_id[:200]
 # tu.store_timelines2(api, users_id, fout_path, since_id)  # , max_id)
+
 
 df = pd.read_csv(pathToData+"CoAID/05-01-2020/NewsFakeCOVID-19.csv")
 df2 = pd.read_csv(pathToData+"CoAID/07-01-2020/NewsFakeCOVID-19.csv")
@@ -37,7 +38,9 @@ dfr3 = pd.read_csv(pathToData+"CoAID/09-01-2020/NewsRealCOVID-19.csv")
 dfr4 = pd.read_csv(pathToData+"CoAID/11-01-2020/NewsRealCOVID-19.csv")
 framesr = [dfr, dfr2, dfr3, dfr4]
 df_real_news = pd.concat(framesr, ignore_index=True)
-# nu.parse_match_count(df_fake_news, df_real_news, users_id)
+df_fake_news = df_fake_news.fillna('0').astype('object')
+df_real_news = df_real_news.fillna('0').astype('object')
+nu.parse_match_count(df_fake_news, df_real_news, users_id)
 
 df_detected = pd.read_csv("data/df/fake_uit_0.csv")
 nu.stance_detection_create_file(

@@ -64,6 +64,7 @@ def parse_match_count(df_fake_news, df_real_news, users_id):
         print(str(user))
         url_list = []
         df = pd.read_csv("data/tweet/"+str(user)+".csv")
+        df = df.fillna('0').astype('object')
         df_url = df[df.text.str.contains('http', case=False)]
         url_list = []
         for text in df_url.text:
