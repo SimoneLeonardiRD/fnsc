@@ -90,7 +90,7 @@ def limit_handled(cursor):
             return
 
 
-def store_users(api, ids):
+def store_users(api, ids, output_file):
     users_from_tweetids = []
     for tweetid in ids['tweet_id']:
         try:
@@ -105,7 +105,7 @@ def store_users(api, ids):
 
     users_from_tweetids = set(users_from_tweetids)
     users_from_tweetids = list(users_from_tweetids)
-    fout = open("users_fake_news.txt", "a")
+    fout = open(output_file, "a")
     for user in users_from_tweetids:
         fout.write(str(user)+"\n")
 

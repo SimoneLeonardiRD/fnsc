@@ -37,6 +37,7 @@ def find_url(line):
 
 
 def parse_match_count(df_fake_news, df_real_news, users_id):
+    exception_file = open("exception.txt", "a")
     pool = multiprocessing.Pool(100)
     counter_users = 1
     total = len(users_id)
@@ -63,7 +64,12 @@ def parse_match_count(df_fake_news, df_real_news, users_id):
         counter_users = counter_users + 1
         print(str(user))
         url_list = []
-        df = pd.read_csv("data/tweet/"+str(user)+".csv")
+        try:
+            df = pd.read_csv("data/tweet/"+str(user)+".csv")
+        except:
+            print("impossible reading user" + str(user))
+            exception_file.write("impossible reading user " + str(user) + "\n")
+            continue
         df = df.fillna('0').astype('object')
         df_url = df[df.text.str.contains('http', case=False)]
         url_list = []
@@ -103,6 +109,7 @@ def parse_match_count(df_fake_news, df_real_news, users_id):
     dfcoll.to_csv("data/df/fake_uit_0.csv", index=False)
     dfcollr.to_csv("data/df/real_uit_0.csv", index=False)
     dfstat.to_csv("data/df/count_0.csv", index=False)
+    exception_file.close()
 
 
 def stance_detection_create_file(df_news, df_detected, fake=True):

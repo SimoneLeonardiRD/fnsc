@@ -8,11 +8,19 @@ pathToDevKeyAndSecret = "consumer_api_keys.txt"
 api = tu.authentication(pathToDevKeyAndSecret, pathToTwitterAuthData)
 
 pathToData = "~/Venv/Documents/dataset/CoAID/"
-fn = "NewsFakeCOVID-19_tweets.csv"
-fake_news = pd.read_csv(pathToData+fn)
-print(fake_news.shape)
-ids = fake_news[['tweet_id']]
+outputPath = "data/user/"
+output_user_file = "users_real_news.txt"
 
+# fn = "NewsFakeCOVID-19_tweets.csv"
+rn = "NewsRealCOVID-19_tweets.csv"
+# fake_news = pd.read_csv(pathToData+fn)
+real_news = pd.read_csv(pathToData+rn)
+print(real_news.shape)
+# ids = fake_news[['tweet_id']]
+ids = real_news[['tweet_id']]
+ids = ids[5000:10000]
+tu.store_users(api, ids, outputPath+output_user_file)
+'''
 users_id = []
 fin = open("users_fake_news.txt", "r")
 for line in fin.readlines():
@@ -23,8 +31,8 @@ since_id = fake_news["tweet_id"].min()  # time span matching CoAid
 # max_id = fake_news["tweet_id"].max()
 print(since_id)  # , max_id)
 users_id = users_id[:200]
-# tu.store_timelines2(api, users_id, fout_path, since_id)  # , max_id)
-
+#tu.store_timelines2(api, users_id, fout_path, since_id)  # , max_id)
+#print("timelines stored")
 
 df = pd.read_csv(pathToData+"CoAID/05-01-2020/NewsFakeCOVID-19.csv")
 df2 = pd.read_csv(pathToData+"CoAID/07-01-2020/NewsFakeCOVID-19.csv")
@@ -45,3 +53,4 @@ nu.parse_match_count(df_fake_news, df_real_news, users_id)
 df_detected = pd.read_csv("data/df/fake_uit_0.csv")
 nu.stance_detection_create_file(
     df_fake_news.fillna('0'), df_detected, fake=True)
+'''
