@@ -8,23 +8,16 @@ import pandas as pd
 def authentication(pathToDevKeyAndSecret, pathToTwitterAuthData):
     try:
         f = open(pathToDevKeyAndSecret, "r")
-        # retrieving key and secret in a local file, not available on github
-        # ask this info to the developer of the app
     except IOError:
         print("file with key and secret of Twitter app not found")
-        print("ask to the developer\n")
+        print("ask to the developer or register your app\n")
         exit()
-    else:
-        print("file opening and information retrieving")
 
-    # read my developer app key and secret from local file .gitignore
     consumer_key = f.readline().rstrip('\n')
     consumer_secret = f.readline().rstrip('\n')
     f.close()
     auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
-
-    twitterAuthData = Path(pathToTwitterAuthData)  # here we find key and
-    # secret of the user using the app on Twitter
+    twitterAuthData = Path(pathToTwitterAuthData)  
     if(not twitterAuthData.is_file() or
        os.stat(pathToTwitterAuthData).st_size == 0):
         # no previous authentication data, need to autenthicate via browser
@@ -48,23 +41,15 @@ def authentication(pathToDevKeyAndSecret, pathToTwitterAuthData):
         twitterAuthData.close()
 
     else:
-        # already got auth data, read it from file
         twitterAuthData = open(pathToTwitterAuthData, "r")
         access_token = twitterAuthData.readline().rstrip('\n')
         access_token_secret = twitterAuthData.readline().rstrip('\n')
         twitterAuthData.close()
 
     auth.set_access_token(access_token, access_token_secret)
-    api = tweepy.API(auth, wait_on_rate_limit=True)
-    # wait_on_rate_limit=True, wait_on_rate_limit_notify=True)
+    api = tweepy.API(auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True)
     print('Authentication completed with success')
     return api
-
-
-def create_all_necessary_folders(pathToDataFolder, topic_selected):
-    # --Create the Data collection folder if not exists--#
-    if not os.path.exists(pathToDataFolder):
-        os.makedirs(pathToDataFolder)
 
 
 def limit_handled(cursor):
@@ -78,9 +63,6 @@ def limit_handled(cursor):
             print(e)
             code_elem = str(e).split(" ")
             code_err = code_elem[-1]
-            # print(code_err)
-            if code_err == '401':
-                return
             if code_err == '429':
                 print("Sleeping")
                 time.sleep(15*60)
@@ -91,6 +73,7 @@ def limit_handled(cursor):
 
 
 def store_users(api, ids, output_file):
+    print("Searching users...\n")
     users_from_tweetids = []
     for tweetid in ids['tweet_id']:
         try:
@@ -108,9 +91,10 @@ def store_users(api, ids, output_file):
     fout = open(output_file, "a")
     for user in users_from_tweetids:
         fout.write(str(user)+"\n")
+    print("All users stored\n")
 
 
-def store_timelines(api, users_id, fout_path, since_id):  # , max_id):
+def store_timelines_as_txt_cleaned(api, users_id, fout_path, since_id):
     counter = 0
     for user in users_id:
         print(str(counter))
@@ -137,10 +121,11 @@ def store_timelines(api, users_id, fout_path, since_id):  # , max_id):
         fout.close()
 
 
-def store_timelines2(api, users_id, fout_path, since_id):  # , max_id):
-    counter = 0
+def store_timelines_as_df(api, users_id, fout_path, since_id):
+    print("Collecting users timelines since " + str(since_id) + "\n")
+    counter = 1
     for user in users_id:
-        print(str(counter))
+        print(str(counter)+"/"+str(len(users_id)))
         counter += 1
         data = {'user_id': [],
                 'tweet_id': [],
@@ -160,7 +145,6 @@ def store_timelines2(api, users_id, fout_path, since_id):  # , max_id):
                 'tweet_id': str(status.id),
                 'text': status.full_text
             }
-            #print(new_row)
             df = df.append(new_row, ignore_index=True)
-            #print(df)
         df.to_csv(fout_path+str(user)+".csv", index=False)
+    print("Collection completed\n")

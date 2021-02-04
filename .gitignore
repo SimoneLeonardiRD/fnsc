@@ -142,6 +142,8 @@ retweeters_timeline/
 architecture_im/
 data/
 .vscode/
+generated_data
+dataset
 
 # other files
 *.txt

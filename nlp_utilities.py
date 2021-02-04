@@ -36,7 +36,10 @@ def find_url(line):
             return word.rstrip("\n")
 
 
-def parse_match_count(df_fake_news, df_real_news, users_id):
+def parse_match_count(df_fake_news, df_real_news, users_id,
+                      pathToTimelines, pathToNewsMatched,
+                      df_range=""):
+    print("Checking for news sharing in Users Timelines\n")
     exception_file = open("exception.txt", "a")
     pool = multiprocessing.Pool(100)
     counter_users = 1
@@ -65,7 +68,7 @@ def parse_match_count(df_fake_news, df_real_news, users_id):
         print(str(user))
         url_list = []
         try:
-            df = pd.read_csv("data/tweet/"+str(user)+".csv")
+            df = pd.read_csv(pathToTimelines+str(user)+".csv")
         except:
             print("impossible reading user" + str(user))
             exception_file.write("impossible reading user " + str(user) + "\n")
@@ -106,10 +109,11 @@ def parse_match_count(df_fake_news, df_real_news, users_id):
 
         }
         dfstat = dfstat.append(dfstat_row, ignore_index=True)
-    dfcoll.to_csv("data/df/fake_uit_0.csv", index=False)
-    dfcollr.to_csv("data/df/real_uit_0.csv", index=False)
-    dfstat.to_csv("data/df/count_0.csv", index=False)
+    dfcoll.to_csv(pathToNewsMatched+"fake_uit"+df_range+".csv", index=False)
+    dfcollr.to_csv(pathToNewsMatched+"real_uit"+df_range+".csv", index=False)
+    dfstat.to_csv(pathToNewsMatched+"count"+df_range+".csv", index=False)
     exception_file.close()
+    print("Check and store phase complete\n")
 
 
 def stance_detection_create_file(df_news, df_detected, fake=True):
