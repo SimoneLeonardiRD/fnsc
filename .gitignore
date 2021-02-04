@@ -144,7 +144,8 @@ data/
 .vscode/
 generated_data
 dataset
-
+scratch_code
+twitter_dev
 # other files
 *.txt
 scratch_code.py

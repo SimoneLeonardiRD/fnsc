@@ -1,272 +1,76 @@
-import torch
-from torch.utils.data import TensorDataset, DataLoader, RandomSampler
-# , SequentialSampler
-# import torch.nn.functional as F
-from sklearn.model_selection import train_test_split
-# from transformers import BertConfig, BertModel
-from transformers import BertTokenizer, AdamW
-from transformers import BertForSequenceClassification
-from transformers import get_linear_schedule_with_warmup
-# from tqdm import tqdm, trange, tqdm_notebook
-from tqdm import tnrange
+import twitter_utilities as tu
 import pandas as pd
-# import io
-import numpy as np
-# Import and evaluate each test batch using Matthew's correlation coefficient
-# from sklearn.metrics import accuracy_score, matthews_corrcoef
-import random
-# import os
+import nlp_utilities as nu
 
-# identify and specify the GPU as the device,
-# later in training loop we will load data into device
-# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-device = torch.device("cpu")
-# n_gpu = torch.cuda.device_count()
-# torch.cuda.get_device_name(0)
+# ----- Twitter Authenitcation ----- #
+pathToTwitterAuthData = "twitter_dev/twitterAccess.txt"
+pathToDevKeyAndSecret = "twitter_dev/consumer_api_keys.txt"
+api = tu.authentication(pathToDevKeyAndSecret, pathToTwitterAuthData)
 
-SEED = 19
+# ----- Users Retrieval from Tweets in CoAID dataset ----- #
+real = False
+pathToCoAID = "dataset/CoAID/"
+pathToUser = "generated_data/user/"
 
-random.seed(SEED)
-np.random.seed(SEED)
-torch.manual_seed(SEED)
-if device == torch.device("cuda"):
-    torch.cuda.manual_seed_all(SEED)
+if real is True:
+    output_user_file = "users_real_news.txt"
+    news_file = "NewsRealCOVID-19_tweets.csv"
+    pathToTimelines = "generated_data/tweet_real/"
+else:
+    output_user_file = "users_fake_news.txt"
+    news_file = "NewsFakeCOVID-19_tweets.csv"
+    pathToTimelines = "generated_data/tweet/"
 
-# print(device, n_gpu, torch.cuda.get_device_name(0))
+news_df = pd.read_csv(pathToCoAID+news_file)
+print("news df shape", news_df.shape)
+ids = news_df[['tweet_id']]
+# ids = ids[5000:10000]
+tu.store_users(api, ids, pathToUser+output_user_file)
 
-# Reading Data into dataFrame
-# BERT-big5/big5/myPersonalitySmallReal - per hpc status and labels
-text = pd.read_csv(
-        "~/Venv/Documents/dataset/myPersonalitySmall/statuses_unicode.txt",
-        header=None,
-        names=['sentence'])
-big5 = pd.read_csv(
-        "../dataset/myPersonalitySmall/big5labels.txt",
-        delimiter=" ",
-        header=None,
-        names=['O', 'C', 'E', 'A', 'N'])
-# print(text.sample(5))
-# print(text.sentence.size)
+# ----- Timelines Retrieval ----- #
+users_id = []
+fin = open(pathToUser+output_user_file, "r")
+for line in fin.readlines():
+    users_id.append(line.rstrip("\n"))
+since_id = news_df["tweet_id"].min()  # time span matching CoAid
+users_id = users_id[:200]
+df_range = "_0_200"
+tu.store_timelines_as_df(api, users_id, pathToTimelines, since_id)  # , max_id)
 
-df = pd.concat([text, big5], axis=1, sort=False)
-print(df.sample(5))
-# df = df.iloc[0:4]
-max_len = 0
-for i in df['sentence']:
-    # print(len(str(i)))
-    if (len(str(i)) > max_len):
-        max_len = len(str(i))
-print(max_len)
+# ----- News Sharing URL Detection and Collection ----- #
+pathToNewsMatched = "generated_data/news_matched/"
+fake_checked = "NewsFakeCOVID-19.csv"
+df = pd.read_csv(pathToCoAID+"05-01-2020/"+fake_checked)
+df2 = pd.read_csv(pathToCoAID+"07-01-2020/"+fake_checked)
+df3 = pd.read_csv(pathToCoAID+"09-01-2020/"+fake_checked)
+df4 = pd.read_csv(pathToCoAID+"11-01-2020/"+fake_checked)
+frames = [df, df2, df3, df4]
+df_fake_news = pd.concat(frames, ignore_index=True)
+real_checked = "NewsRealCOVID-19.csv"
+dfr = pd.read_csv(pathToCoAID+"05-01-2020/"+real_checked)
+dfr2 = pd.read_csv(pathToCoAID+"07-01-2020/"+real_checked)
+dfr3 = pd.read_csv(pathToCoAID+"09-01-2020/"+real_checked)
+dfr4 = pd.read_csv(pathToCoAID+"11-01-2020/"+real_checked)
+framesr = [dfr, dfr2, dfr3, dfr4]
+df_real_news = pd.concat(framesr, ignore_index=True)
+df_fake_news = df_fake_news.fillna('0').astype('object')
+df_real_news = df_real_news.fillna('0').astype('object')
+nu.parse_match_count(df_fake_news, df_real_news, users_id,
+                     pathToTimelines, pathToNewsMatched,
+                     df_range)
 
-MAX_LEN = 512  # the nearest power of 2
-# Import BERT tokenizer, that is used to convert our text into
-# tokens that corresponds to BERT library
-tokenizer = BertTokenizer.from_pretrained(
-                'bert-base-multilingual-cased',
-                do_lower_case=False)
-
-df['sentence'] = df['sentence'].astype('str')
-# from object to string (sometimes str sometimes string)
-sentences = df.sentence.values
-# print(sentences)
-input_ids = [tokenizer.encode(sent,
-                              add_special_tokens=True,
-                              max_length=MAX_LEN,
-                              pad_to_max_length=True) for sent in sentences]
-
-# print("Actual sentence before tokenization: ",sentences[2])
-# print("Encoded Input from dataset: ",input_ids[2])
-
-# Create attention mask
-attention_masks = []
-# Create a mask of 1 for all input tokens and 0 for all padding tokens
-attention_masks = [[float(i > 0) for i in seq] for seq in input_ids]
-# print(attention_masks[2])
-
-labels = df.O.values  # wroking with OPENNESS !!!
-
-train_inputs, validation_inputs, train_labels, validation_labels = \
-    train_test_split(input_ids, labels, random_state=SEED, test_size=0.1)
-train_masks, validation_masks, _, _ =   \
-    train_test_split(attention_masks,
-                     input_ids,
-                     random_state=SEED,
-                     test_size=0.1)
-
-# convert all our data into torch tensors, required data type for our model
-train_inputs = torch.tensor(train_inputs)
-validation_inputs = torch.tensor(validation_inputs)
-train_labels = torch.tensor(train_labels).float()
-validation_labels = torch.tensor(validation_labels).float()
-train_masks = torch.tensor(train_masks)
-validation_masks = torch.tensor(validation_masks)
-
-# Select a batch size for training. For fine-tuning BERT on a specific task,
-# the authors recommend a batch size of 16 or 32
-batch_size = 4
-
-# Create an iterator of our data with torch DataLoader. This helps save on
-# memory during training because, unlike a for loop,
-# with an iterator the entire dataset does not need to be loaded into memory
-train_data = TensorDataset(train_inputs, train_masks, train_labels)
-train_sampler = RandomSampler(train_data)
-train_dataloader = DataLoader(train_data, sampler=train_sampler,
-                              batch_size=batch_size)
-
-validation_data = TensorDataset(validation_inputs,
-                                validation_masks,
-                                validation_labels)
-validation_sampler = RandomSampler(validation_data)
-validation_dataloader = DataLoader(validation_data,
-                                   sampler=validation_sampler,
-                                   batch_size=batch_size)
-
-# Load BertForSequenceClassification, the pretrained BERT model
-# with a single linear classification layer on top.
-model = BertForSequenceClassification.from_pretrained(
-            "bert-base-multilingual-cased",
-            num_labels=1).to(device)
-# setting num_label=1 configure the model to perform regression
-# and change the loss into Mean-Square Loss
-
-# Parameters:
-lr = 2e-5
-adam_epsilon = 1e-8
-
-# Number of training epochs (authors recommend between 2 and 4)
-epochs = 3
-
-num_warmup_steps = 0
-num_training_steps = len(train_dataloader)*epochs
-
-# Prepare optimizer and schedule (linear warmup and decay)
-# no_decay = ['bias', 'LayerNorm.weight']
-# optimizer_grouped_parameters = [
-#     {'params': [p for n, p in model.named_parameters()
-#       if not any(nd in n for nd in no_decay)], 'weight_decay': 0.01},
-#     {'params': [p for n, p in model.named_parameters()
-#       if any(nd in n for nd in no_decay)], 'weight_decay': 0.0}
-#     ]
-
-# In Transformers, optimizer and schedules are splitted and
-#  instantiated like this:
-# optimizer = AdamW(optimizer_grouped_parameters, lr=lr, eps=adam_epsilon)
-optimizer = AdamW(model.parameters(),
-                  lr=lr,
-                  eps=adam_epsilon,
-                  correct_bias=False)
-# To reproduce BertAdam specific behavior set correct_bias=False
-scheduler = get_linear_schedule_with_warmup(
-                optimizer,
-                num_warmup_steps=num_warmup_steps,
-                num_training_steps=num_training_steps)
-# PyTorch scheduler
-
-# Store our loss and accuracy for plotting
-train_loss_set = []
-learning_rate = []
-
-# Gradients gets accumulated by default
-model.zero_grad()
-
-# tnrange is a tqdm wrapper around the normal python range
-for _ in tnrange(1, epochs+1, desc='Epoch'):
-    print("<" + "="*22 + F" Epoch {_} " + "="*22 + ">")
-    # Calculate total loss for this epoch
-    batch_loss = 0
-
-    for step, batch in enumerate(train_dataloader):
-        # Set our model to training mode (as opposed to evaluation mode)
-        model.train()
-        # Add batch to GPU
-        batch = tuple(t.to(device) for t in batch)
-        # Unpack the inputs from our dataloader
-        b_input_ids, b_input_mask, b_labels = batch
-
-        # Forward pass
-        outputs = model(b_input_ids,
-                        token_type_ids=None,
-                        attention_mask=b_input_mask,
-                        labels=b_labels)
-        loss = outputs[0]
-
-        # Backward pass
-        loss.backward()
-
-        # Clip the norm of the gradients to 1.0
-        torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
-        # Gradient clipping is not in AdamW anymore
-        # (so you can use amp without issue)
-
-        # Update parameters and take a step using the computed gradient
-        optimizer.step()
-
-        # Update learning rate schedule
-        scheduler.step()
-
-        # Clear the previous accumulated gradients
-        optimizer.zero_grad()
-
-        # Update tracking variables
-        batch_loss += loss.item()
-
-    # Calculate the average loss over the training data.
-    avg_train_loss = batch_loss / len(train_dataloader)
-
-    # store the current learning rate
-    for param_group in optimizer.param_groups:
-        print("\n\tCurrent Learning rate: ", param_group['lr'])
-        learning_rate.append(param_group['lr'])
-
-    train_loss_set.append(avg_train_loss)
-    print(F'\n\tAverage Training loss: {avg_train_loss}')
-
-    # Validation
-
-    # Put model in evaluation mode to evaluate loss on the validation set
-    model.eval()
-
-    # Tracking variables
-    nb_eval_steps = 0
-
-    # Evaluate data for one epoch
-    for batch in validation_dataloader:
-        # Add batch to GPU
-        batch = tuple(t.to(device) for t in batch)
-        # Unpack the inputs from our dataloader
-        b_input_ids, b_input_mask, b_labels = batch
-        # Telling the model not to compute or store gradients,
-        # saving memory and speeding up validation
-        with torch.no_grad():
-            # Forward pass, calculate logit predictions
-            logits = model(b_input_ids,
-                           token_type_ids=None,
-                           attention_mask=b_input_mask)
-            print("logits", logits)
-
-        # Move logits and labels to CPU
-        logits = logits[0].to('cpu').numpy()
-        # in this case logits represent the predicted value
-        # for the regression on a float number
-        label_ids = b_labels.to('cpu').numpy()
-
-        # print(logits, label_ids)
-        # pred_flat = np.argmax(logits, axis=1).flatten()
-        # labels_flat = label_ids.flatten()
-        # tmp_eval_accuracy = accuracy_score(pred_flat, labels_flat)
-        # tmp_eval_mcc_accuracy = matthews_corrcoef(labels_flat, pred_flat)
-
-        # eval_accuracy += tmp_eval_accuracy
-        # eval_mcc_accuracy += tmp_eval_mcc_accuracy
-        # nb_eval_steps += 1
-
-    # print(F'\n\tValidation Accuracy: {eval_accuracy/nb_eval_steps}')
-    # print(F'\n\tValidation MCC Accuracy: {eval_mcc_accuracy/nb_eval_steps}')
-
-path_model = "model/"
-path_tokenizer = "tokenizer/"
-model.save_pretrained(path_model)
-tokenizer.save_pretrained(path_tokenizer)
-model_save_name = 'fineTuneModel.pt'
-path_model = path_model+model_save_name
-torch.save(model.state_dict(), path_model)
+# ----- Stance Detection ----- #
+tweet_news_matched = "fake_uit_0.csv"
+pathToStance = "generated_data/stance/"
+stance_out = "fake_uit_stance_o.csv"
+df_detected = pd.read_csv(pathToNewsMatched+tweet_news_matched)
+nu.stance_detection_create_file(
+    df_fake_news.fillna('0'), df_detected, fake=True)
+print("gate_cloud.txt file has been created.\n")
+print("Please visit https://bit.ly/2Mzmr1l")
+print(" and upload the gate_cloud.txt file")
+print("Once processed, download the json file with the result.")
+stance_result = input("Insert the just downloaded file name: \n")
+nu.read_and_format_stance_result(stance_result,
+                                 pathToNewsMatched+tweet_news_matched,
+                                 pathToStance+stance_out)

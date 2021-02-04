@@ -1,6 +1,7 @@
 import requests
 import multiprocessing
 import pandas as pd
+import json
 
 
 def resolve_url(url):
@@ -157,3 +158,20 @@ def check_column(column, df_news, url):
         flag = 0
         return flag, None
     return flag, title
+
+
+def read_and_format_stance_result(result_stance, input_file, output_file):
+    with open(result_stance) as f:  # 'generated_data/stance/resultFile.json'
+        data = json.load(f)
+    f.close()
+    # print(json.dumps(data, indent=4, sort_keys=True))
+    # print(data["entities"]["TweetStance"][0]["stance_class"])
+    # print(data["entities"]["TweetStance"][1]["stance_class"])
+    list_stance = []
+    for elem in data["entities"]["TweetStance"]:
+        print(elem["stance_class"])
+        list_stance.append(elem["stance_class"])
+
+    df = pd.read_csv(input_file)  # "data/df/fake_uit_0.csv"
+    df["stance"] = list_stance
+    df.to_csv(output_file, index=False)  # "data/stance/fake_uit_stance_0.csv"
