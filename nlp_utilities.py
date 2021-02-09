@@ -4,6 +4,18 @@ import pandas as pd
 import json
 
 
+def clean_newline_and_tab(sentence):
+    new_tweet = ""
+    tweet_cleaned = sentence.split("\n")
+    for sintagma in tweet_cleaned:
+        new_tweet = new_tweet + " " + sintagma
+    new_tweet2 = ""
+    tweet_cleaned2 = new_tweet.split("\t")
+    for sintagma2 in tweet_cleaned2:
+        new_tweet2 = new_tweet2 + " " + sintagma2
+
+    return new_tweet2
+
 def resolve_url(url):
     if url is None:
         return None
@@ -121,7 +133,7 @@ def stance_detection_create_file(df_news, df_detected, fake=True):
     i = 1
     iloc_count = 0
     flag = 0
-    f = open("gate_cloud.txt", "w")
+    f = open("gate_cloud.txt", "a")
     for url in df_detected["extended_url"]:
         flag, title = check_column("news_url", df_news, url)
         if fake is True:
@@ -134,10 +146,11 @@ def stance_detection_create_file(df_news, df_detected, fake=True):
             if flag == 0:
                 flag, title = check_column("news_url5", df_news, url)
         if flag == 1:
-            f.write("{\"text\":\""+str(
-                df_detected.iloc[iloc_count]['text']) +
+            f.write("{\"text\":\""+str(clean_newline_and_tab(
+                df_detected.iloc[iloc_count]['text'])) +
                     "\",\"id_str\":\""+str(i)+"\"}\n\n")
-            f.write("{\"text\":\""+str(title)+"\",\"id_str\":\""+str(i+1) +
+            f.write("{\"text\":\""+str(clean_newline_and_tab(
+                title))+"\",\"id_str\":\""+str(i+1) +
                     "\", \"in_reply_to_status_id_str\":\""+str(i)+"\"}\n\n")
         i = i + 2
         iloc_count = iloc_count + 1
@@ -160,7 +173,7 @@ def check_column(column, df_news, url):
     return flag, title
 
 
-def read_and_format_stance_result(result_stance, input_file, output_file):
+def read_and_format_stance_result_from_txt(result_stance, input_file, output_file):
     with open(result_stance) as f:  # 'generated_data/stance/resultFile.json'
         data = json.load(f)
     f.close()
@@ -175,3 +188,18 @@ def read_and_format_stance_result(result_stance, input_file, output_file):
     df = pd.read_csv(input_file)  # "data/df/fake_uit_0.csv"
     df["stance"] = list_stance
     df.to_csv(output_file, index=False)  # "data/stance/fake_uit_stance_0.csv"
+
+
+def parse_stance_result_from_list(data):
+    # print(json.dumps(data, indent=4, sort_keys=True))
+    # print(data["entities"]["TweetStance"][0]["stance_class"])
+    # print(data["entities"]["TweetStance"][1]["stance_class"])
+    print(data)
+    try:
+        for elem in data["entities"]["TweetStance"]:
+            print(elem["stance_class"])
+            return(elem["stance_class"])
+    except:
+        print("error")
+        return "error"
+        

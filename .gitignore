@@ -146,6 +146,7 @@ generated_data
 dataset
 scratch_code
 twitter_dev
+old_result
 # other files
 *.txt
 scratch_code.py

@@ -3,13 +3,15 @@ import pandas as pd
 import nlp_utilities as nu
 
 # ----- Twitter Authenitcation ----- #
-pathToTwitterAuthData = "twitter_dev/twitterAccess.txt"
-pathToDevKeyAndSecret = "twitter_dev/consumer_api_keys.txt"
-api = tu.authentication(pathToDevKeyAndSecret, pathToTwitterAuthData)
+TwitterAuthData = "twitter_dev/twitterAccess.txt"
+DevKeyAndSecret = "twitter_dev/consumer_api_keys.txt"
+api = tu.authentication(DevKeyAndSecret, TwitterAuthData)
 
 # ----- Users Retrieval from Tweets in CoAID dataset ----- #
 real = False
+fake = True
 pathToCoAID = "dataset/CoAID/"
+pathToCoAID_old = "dataset/"
 pathToUser = "generated_data/user/"
 
 if real is True:
@@ -21,11 +23,11 @@ else:
     news_file = "NewsFakeCOVID-19_tweets.csv"
     pathToTimelines = "generated_data/tweet/"
 
-news_df = pd.read_csv(pathToCoAID+news_file)
+news_df = pd.read_csv(pathToCoAID_old+news_file)
 print("news df shape", news_df.shape)
 ids = news_df[['tweet_id']]
 # ids = ids[5000:10000]
-tu.store_users(api, ids, pathToUser+output_user_file)
+# tu.store_users(api, ids, pathToUser+output_user_file)
 
 # ----- Timelines Retrieval ----- #
 users_id = []
@@ -33,10 +35,11 @@ fin = open(pathToUser+output_user_file, "r")
 for line in fin.readlines():
     users_id.append(line.rstrip("\n"))
 since_id = news_df["tweet_id"].min()  # time span matching CoAid
-users_id = users_id[:200]
-df_range = "_0_200"
+users_id = users_id[200:300] # finito, ora fare da 300 in avanti
+df_range = "_0_100"
 tu.store_timelines_as_df(api, users_id, pathToTimelines, since_id)  # , max_id)
 
+'''
 # ----- News Sharing URL Detection and Collection ----- #
 pathToNewsMatched = "generated_data/news_matched/"
 fake_checked = "NewsFakeCOVID-19.csv"
@@ -60,17 +63,10 @@ nu.parse_match_count(df_fake_news, df_real_news, users_id,
                      df_range)
 
 # ----- Stance Detection ----- #
-tweet_news_matched = "fake_uit_0.csv"
+tweet_news_matched = "fake_uit"+df_range+".csv"
 pathToStance = "generated_data/stance/"
-stance_out = "fake_uit_stance_o.csv"
+stance_out = "fake_uit_stance"+df_range+".csv"
 df_detected = pd.read_csv(pathToNewsMatched+tweet_news_matched)
 nu.stance_detection_create_file(
-    df_fake_news.fillna('0'), df_detected, fake=True)
-print("gate_cloud.txt file has been created.\n")
-print("Please visit https://bit.ly/2Mzmr1l")
-print(" and upload the gate_cloud.txt file")
-print("Once processed, download the json file with the result.")
-stance_result = input("Insert the just downloaded file name: \n")
-nu.read_and_format_stance_result(stance_result,
-                                 pathToNewsMatched+tweet_news_matched,
-                                 pathToStance+stance_out)
+    df_fake_news.fillna('0'), df_detected, fake)
+'''
