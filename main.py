@@ -35,6 +35,7 @@ fin = open(pathToUser+output_user_file, "r")
 for line in fin.readlines():
     users_id.append(line.rstrip("\n"))
 since_id = news_df["tweet_id"].min()  # time span matching CoAid
+print(len(users_id))
 users_id = users_id[200:300] # finito, ora fare da 300 in avanti
 df_range = "_0_100"
 tu.store_timelines_as_df(api, users_id, pathToTimelines, since_id)  # , max_id)
