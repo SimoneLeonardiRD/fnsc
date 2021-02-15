@@ -8,13 +8,12 @@ DevKeyAndSecret = "twitter_dev/consumer_api_keys.txt"
 api = tu.authentication(DevKeyAndSecret, TwitterAuthData)
 
 # ----- Users Retrieval from Tweets in CoAID dataset ----- #
-real = False
-fake = True
+fake = False
 pathToCoAID = "dataset/CoAID/"
 pathToCoAID_old = "dataset/"
 pathToUser = "generated_data/user/"
 
-if real is True:
+if fake is False:
     output_user_file = "users_real_news.txt"
     news_file = "NewsRealCOVID-19_tweets.csv"
     pathToTimelines = "generated_data/tweet_real/"
@@ -36,8 +35,7 @@ for line in fin.readlines():
     users_id.append(line.rstrip("\n"))
 since_id = news_df["tweet_id"].min()  # time span matching CoAid
 print(len(users_id))
-users_id = users_id[200:300] # finito, ora fare da 300 in avanti
-df_range = "_0_100"
+users_id = users_id[127:500]  # run
 tu.store_timelines_as_df(api, users_id, pathToTimelines, since_id)  # , max_id)
 
 '''
