@@ -35,10 +35,11 @@ for line in fin.readlines():
     users_id.append(line.rstrip("\n"))
 since_id = news_df["tweet_id"].min()  # time span matching CoAid
 print(len(users_id))
-users_id = users_id[127:500]  # run
-tu.store_timelines_as_df(api, users_id, pathToTimelines, since_id)  # , max_id)
+df_range = "_0_100_real"
+users_id = users_id[0:100]  # controlla quanti elementi in tweet real
+# tu.store_timelines_as_df(api, users_id, pathToTimelines, since_id)
+# , max_id)
 
-'''
 # ----- News Sharing URL Detection and Collection ----- #
 pathToNewsMatched = "generated_data/news_matched/"
 fake_checked = "NewsFakeCOVID-19.csv"
@@ -61,11 +62,10 @@ nu.parse_match_count(df_fake_news, df_real_news, users_id,
                      pathToTimelines, pathToNewsMatched,
                      df_range)
 
-# ----- Stance Detection ----- #
+# ----- Stance Detection ----- # aggiungere stance per i real
 tweet_news_matched = "fake_uit"+df_range+".csv"
 pathToStance = "generated_data/stance/"
 stance_out = "fake_uit_stance"+df_range+".csv"
 df_detected = pd.read_csv(pathToNewsMatched+tweet_news_matched)
 nu.stance_detection_create_file(
-    df_fake_news.fillna('0'), df_detected, fake)
-'''
+    df_fake_news.fillna('0'), df_detected, df_range, fake)

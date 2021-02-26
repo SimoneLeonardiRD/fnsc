@@ -16,6 +16,7 @@ def clean_newline_and_tab(sentence):
 
     return new_tweet2
 
+
 def resolve_url(url):
     if url is None:
         return None
@@ -80,8 +81,10 @@ def parse_match_count(df_fake_news, df_real_news, users_id,
         counter_users = counter_users + 1
         print(str(user))
         url_list = []
+        #print(pathToTimelines+str(user)+".csv")
         try:
             df = pd.read_csv(pathToTimelines+str(user)+".csv")
+            # df = df[:100]
         except:
             print("impossible reading user" + str(user))
             exception_file.write("impossible reading user " + str(user) + "\n")
@@ -129,11 +132,11 @@ def parse_match_count(df_fake_news, df_real_news, users_id,
     print("Check and store phase complete\n")
 
 
-def stance_detection_create_file(df_news, df_detected, fake=True):
+def stance_detection_create_file(df_news, df_detected, df_range, fake=True):
     i = 1
     iloc_count = 0
     flag = 0
-    f = open("gate_cloud.txt", "a")
+    f = open("gate_cloud"+df_range+".txt", "a")
     for url in df_detected["extended_url"]:
         flag, title = check_column("news_url", df_news, url)
         if fake is True:
@@ -202,4 +205,3 @@ def parse_stance_result_from_list(data):
     except:
         print("error")
         return "error"
-        

@@ -147,8 +147,12 @@ dataset
 scratch_code
 twitter_dev
 old_result
+gate_cloud
+
 # other files
 *.txt
 scratch_code.py
 *.csv
 gate_cloud.txt
+gate_cloud.py
+
