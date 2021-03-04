@@ -9,6 +9,7 @@ api = tu.authentication(DevKeyAndSecret, TwitterAuthData)
 
 # ----- Users Retrieval from Tweets in CoAID dataset ----- #
 fake = False
+claim = True
 pathToCoAID = "dataset/CoAID/"
 pathToCoAID_old = "dataset/"
 pathToUser = "generated_data/user/"
@@ -17,29 +18,39 @@ if fake is False:
     output_user_file = "users_real_news.txt"
     news_file = "NewsRealCOVID-19_tweets.csv"
     pathToTimelines = "generated_data/tweet_real/"
+    if claim is True:
+        output_user_file = "users_real_claim.txt"  # ancora da creare
+        news_file = "ClaimRealCOVID-19_tweets.csv"
 else:
     output_user_file = "users_fake_news.txt"
     news_file = "NewsFakeCOVID-19_tweets.csv"
     pathToTimelines = "generated_data/tweet/"
+    if claim is True:
+        output_user_file = "users_fake_claim.txt"
+        news_file = "ClaimFakeCOVID-19_tweets.csv"
 
 news_df = pd.read_csv(pathToCoAID_old+news_file)
 print("news df shape", news_df.shape)
 ids = news_df[['tweet_id']]
-# ids = ids[5000:10000]
-# tu.store_users(api, ids, pathToUser+output_user_file)
+print(ids.shape)
 
+ids = ids[350:450]
+tu.store_users(api, ids, pathToUser+output_user_file)
+print(a)
 # ----- Timelines Retrieval ----- #
 users_id = []
 fin = open(pathToUser+output_user_file, "r")
 for line in fin.readlines():
     users_id.append(line.rstrip("\n"))
 since_id = news_df["tweet_id"].min()  # time span matching CoAid
-print(len(users_id))
-df_range = "_0_100_real"
-users_id = users_id[0:100]  # controlla quanti elementi in tweet real
-# tu.store_timelines_as_df(api, users_id, pathToTimelines, since_id)
+print("There are: " + str(len(users_id)) + " users")
+
+# df_range = "_100_500_real"
+# users_id = users_id[549:552]  # controlla quanti elementi in tweet real
+tu.store_timelines_as_df(api, users_id, pathToTimelines, since_id)
 # , max_id)
 
+'''
 # ----- News Sharing URL Detection and Collection ----- #
 pathToNewsMatched = "generated_data/news_matched/"
 fake_checked = "NewsFakeCOVID-19.csv"
@@ -69,3 +80,4 @@ stance_out = "fake_uit_stance"+df_range+".csv"
 df_detected = pd.read_csv(pathToNewsMatched+tweet_news_matched)
 nu.stance_detection_create_file(
     df_fake_news.fillna('0'), df_detected, df_range, fake)
+'''

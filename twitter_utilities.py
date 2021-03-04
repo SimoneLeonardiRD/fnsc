@@ -125,6 +125,12 @@ def store_timelines_as_df(api, users_id, fout_path, since_id):
     print("Collecting users timelines since " + str(since_id) + "\n")
     counter = 1
     for user in users_id:
+        try:
+            open(fout_path+str(user)+".csv", "r")
+            print("already downloaded")
+            continue
+        except FileNotFoundError:
+            print("new user")
         print(str(counter)+"/"+str(len(users_id)))
         counter += 1
         data = {'user_id': [],

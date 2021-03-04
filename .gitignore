@@ -148,6 +148,9 @@ scratch_code
 twitter_dev
 old_result
 gate_cloud
+old
+results
+output_test
 
 # other files
 *.txt
