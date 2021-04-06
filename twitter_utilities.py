@@ -128,6 +128,8 @@ def store_timelines_as_df(api, users_id, fout_path, since_id):
         try:
             open(fout_path+str(user)+".csv", "r")
             print("already downloaded")
+            counter += 1
+            #aggiungere check dimensione file  utente
             continue
         except FileNotFoundError:
             print("new user")

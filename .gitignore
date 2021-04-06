@@ -151,6 +151,7 @@ gate_cloud
 old
 results
 output_test
+colab_notebooks_old
 
 # other files
 *.txt
@@ -159,3 +160,4 @@ scratch_code.py
 gate_cloud.txt
 gate_cloud.py
 stat.py
+coaid_ext_fake.csv

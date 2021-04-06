@@ -1,5 +1,7 @@
 import pandas as pd
 import numpy as np
+
+'''
 df1 = pd.read_csv("generated_data/news_matched/count_0_100.csv")
 df2 = pd.read_csv("generated_data/news_matched/count_100_200.csv")
 df3 = pd.read_csv("generated_data/news_matched/count_200_500.csv")
@@ -69,3 +71,34 @@ print(dlab2.head())
 #dclean = pd.concat([dlab2, derr]).drop_duplicates(keep=False)
 dlab2.to_csv("user_label_clean.csv")
 print(dlab2.shape)
+'''
+'''
+df = pd.read_csv("output_test/user_label_clean.csv")
+print(df.head())
+print(df.shape)
+df = df[:624]
+user_id = df['user_id']
+total_tweet = 0.0
+for user in user_id:
+    #print(user)
+    dfu = pd.read_csv("generated_data/tweet_drive/"+str(user)+".csv")
+    total_tweet += dfu.shape[0]
+    #print(df.shape[0])
+print(str(total_tweet/df.shape[0]))
+'''
+
+df = pd.read_csv("generated_data/news_matched/count_200_500.csv")
+df1 = df[df['percentage_fake'] > 0]
+print(df1.head())
+totalf = df['percentage_fake'].sum()
+print("fake", str(totalf/df1.shape[0]))
+df = pd.read_csv("generated_data/news_matched/count_100_500_real.csv")
+df2 = df[df['percentage_real'] > 0]
+print(df2.head())
+totalr = df['percentage_real'].sum()
+print("real", str(totalr/df1.shape[0]))
+#rslt_df = dataframe[dataframe['Percentage'] > 80]
+
+#total = df['statuses_count'].sum()
+#print(total)
+#print(str(total/df.shape[0]))

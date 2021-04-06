@@ -9,7 +9,7 @@ api = tu.authentication(DevKeyAndSecret, TwitterAuthData)
 
 # ----- Users Retrieval from Tweets in CoAID dataset ----- #
 fake = False
-claim = True
+claim = False
 pathToCoAID = "dataset/CoAID/"
 pathToCoAID_old = "dataset/"
 pathToUser = "generated_data/user/"
@@ -34,9 +34,9 @@ print("news df shape", news_df.shape)
 ids = news_df[['tweet_id']]
 print(ids.shape)
 
-ids = ids[350:450]
-tu.store_users(api, ids, pathToUser+output_user_file)
-print(a)
+#ids = ids[350:450]
+#tu.store_users(api, ids, pathToUser+output_user_file)
+#print(a)
 # ----- Timelines Retrieval ----- #
 users_id = []
 fin = open(pathToUser+output_user_file, "r")
