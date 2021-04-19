@@ -1,6 +1,6 @@
 ## FakePersonality 
 
-A tool to classify Twitter users, vulnerable to misinformation, based on their [_Personality Traits_](https://www.simplypsychology.org/big-five-personality.html) and [_Basic Human Values_](https://i2s.anu.edu.au/resources/schwartz-theory-basic-values).
+A tool to classify Twitter users, vulnerable to misinformation, based on their tweet embeddings and account information.
 
 Scores are measured using Natural Language Processing approaches on the basis of our previous research: [1](https://dl.acm.org/doi/10.1145/3341105.3373954) and [2](https://www.mdpi.com/2078-2489/11/4/179).
 
